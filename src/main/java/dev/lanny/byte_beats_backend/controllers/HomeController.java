@@ -1,5 +1,5 @@
 package dev.lanny.byte_beats_backend.controllers;
 
-public class InstrumentsController {
+public class HomeController {
 
 }

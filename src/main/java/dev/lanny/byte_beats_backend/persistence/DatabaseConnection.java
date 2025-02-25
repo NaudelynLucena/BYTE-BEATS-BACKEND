@@ -5,7 +5,7 @@ import java.sql.*;
 
 
 
-public class H2Database {
+public class DatabaseConnection {
     // private static final String DB_URL =
     // "jdbc:h2:mem:byte_beats;DB_CLOSE_DELAY=-1"; //defino la conexion a la base de
     // datos indicando que estara en memoria y mantiene la la base de datos activa
@@ -18,13 +18,13 @@ public class H2Database {
             "sound VARCHAR(255) NOT NULL)";
 
     // CONSTRUCTOR POR DEFECTO: USA LA BASE DE DATOS EN MEMORIA
-    public H2Database() {
+    public DatabaseConnection() {
         this("jdbc:h2:mem:byte_beats;DB_CLOSE_DELAY=-1");
     }
 
     // constructor con parametros que em permita personalizar la base de datos pàra
     // las pruebas
-    public H2Database(String dbUrl) {
+    public DatabaseConnection(String dbUrl) {
         this.DB_URL = dbUrl;
         initDatabase();
     }
@@ -52,7 +52,7 @@ public class H2Database {
         }
     }
 
-   
+
 
     // Devuelve una conexión a la base de datos.
 
