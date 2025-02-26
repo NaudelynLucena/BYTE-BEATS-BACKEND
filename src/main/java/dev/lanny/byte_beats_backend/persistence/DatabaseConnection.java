@@ -1,63 +1,32 @@
 package dev.lanny.byte_beats_backend.persistence;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
-import java.sql.*;
-
-
-
+import dev.lanny.byte_beats_backend.config.ConfigLoader;
 
 public class DatabaseConnection {
-    // private static final String DB_URL =
-    // "jdbc:h2:mem:byte_beats;DB_CLOSE_DELAY=-1"; //defino la conexion a la base de
-    // datos indicando que estara en memoria y mantiene la la base de datos activa
-    // mientras se ejecuta la aplicacion
-    private String DB_URL;// url confiable para la base de datos
-    private static final String CREATE_TABLE_SQL = "CREATE TABLE IF NOT EXISTS instruments (" +
-            "id INT PRIMARY KEY, " +
-            "name VARCHAR(255) NOT NULL, " +
-            "type VARCHAR(255) NOT NULL, " +
-            "sound VARCHAR(255) NOT NULL)";
 
-    // CONSTRUCTOR POR DEFECTO: USA LA BASE DE DATOS EN MEMORIA
-    public DatabaseConnection() {
-        this("jdbc:h2:mem:byte_beats;DB_CLOSE_DELAY=-1");
+    private static Connection connection;
+
+    public static Connection getConnection() throws SQLException {
+        if (connection == null || connection.isClosed()) {
+            connection = createConnection();
+        }
+        return connection;
     }
 
-    // constructor con parametros que em permita personalizar la base de datos pàra
-    // las pruebas
-    public DatabaseConnection(String dbUrl) {
-        this.DB_URL = dbUrl;
-        initDatabase();
+    private static Connection createConnection() throws SQLException {
+        String url = ConfigLoader.get("db.url");
+        String user = ConfigLoader.get("db.user");
+        String password = ConfigLoader.get("db.password");
+
+        return DriverManager.getConnection(url, user, password);
     }
 
-    public void initDatabase() {
-        try {
-            // Cargar el driver de H2 manualmente para evitar errores de conexión
-            Class.forName("org.h2.Driver");
-
-            try (Connection connection = DriverManager.getConnection(DB_URL);
-                    Statement statement = connection.createStatement()) {
-
-                System.out.println("Creando tabla si no existe...");
-                statement.execute(CREATE_TABLE_SQL);
-                System.out.println("Tabla 'instruments' creada o ya existente.");
-
-            }
-        } catch (ClassNotFoundException e) {
-            System.out.println("ERROR: No se encontró el driver de H2.");
-            throw new RuntimeException("Error al cargar el driver H2", e);
-        } catch (SQLException e) {
-            System.out.println("ERROR al crear la tabla: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Error al conectar con la base de datos H2", e);
+    public static void closeConnection() throws SQLException {
+        if (connection != null) {
+            connection.close();
         }
     }
-
-
-
-    // Devuelve una conexión a la base de datos.
-
-    public Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DB_URL);
-    }
-
 }
