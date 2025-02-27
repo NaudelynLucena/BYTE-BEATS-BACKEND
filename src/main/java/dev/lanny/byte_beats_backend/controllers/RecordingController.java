@@ -4,59 +4,80 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import dev.lanny.byte_beats_backend.dtos.RecordingDto;
 import dev.lanny.byte_beats_backend.repository.RecordingRepository;
 import utils.JsonManager;
 
-
 public class RecordingController {
-
+    private static final Logger LOGGER = Logger.getLogger(RecordingController.class.getName());
     private final RecordingRepository recordingRepository;
 
-    public RecordingController(){
+    public RecordingController() {
         this.recordingRepository = new RecordingRepository();
-
     }
 
-    public String processRecordingRequest(String method, String path, BufferedReader input)throws IOException {
-        if ("GET".equalsIgnoreCase(method) && path.equals("/recordings")) {
-            return getAllRecordings();
-        }
-        if ("GET".equalsIgnoreCase(method) && path.startsWith("/recordings/")) {
-            try {
-                int id = Integer.parseInt(path.substring(12));
-                return getRecordingById(id);
-            } catch (NumberFormatException e) {
-                return "HTTP/1.1 400 Bad Request\r\n\r\nInvalid ID format";
+    public String processRecordingRequest(String method, String path, BufferedReader input) throws IOException {
+        try {
+            if ("GET".equalsIgnoreCase(method)) {
+                return handleGetRequest(path);
+            } else if ("POST".equalsIgnoreCase(method) && path.equals("/recordings")) {
+                return createRecording(readRequestBody(input));
+            } else if ("PUT".equalsIgnoreCase(method)) {
+                return handlePutRequest(path, input);
+            } else if ("DELETE".equalsIgnoreCase(method)) {
+                return handleDeleteRequest(path);
             }
-        }
-        if ("POST".equalsIgnoreCase(method) && path.equals("/recordings")) {
-            return createRecording(readRequestBody(input));
-        }
-        if ("PUT".equalsIgnoreCase(method) && path.startsWith("/recordings/")) {
-            try{
-                int id = Integer.parseInt(path.substring(12));
-                return updateRecording(id , readRequestBody(input));
-            } catch (NumberFormatException e) {
-                return "HTTP/1.1 400 Bad Request\r\n\r\nInvalid ID format";
-            }
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error procesando la petición", e);
+            return formatHttpResponse(500, "Error interno del servidor");
         }
 
-        if ("DELETE".equalsIgnoreCase(method) && path.startsWith("/recordings/")) {
+        return formatHttpResponse(404, "Recurso no encontrado");
+    }
+
+    private String handleGetRequest(String path) {
+        if (path.equals("/recordings")) {
+            return formatHttpResponse(200, getAllRecordings());
+        } else if (path.startsWith("/recordings/")) {
             try {
                 int id = Integer.parseInt(path.substring(12));
-                destroyRecording(id);
+                return formatHttpResponse(200, getRecordingById(id));
             } catch (NumberFormatException e) {
-                return "HTTP/1.1 400 Bad Request\r\n\r\nInvalid ID format";
+                return formatHttpResponse(400, "Formato de ID inválido");
             }
         }
-        return "HTTP/1.1 404 Not Found\r\n\r\n";
+        return formatHttpResponse(404, "Recurso no encontrado");
+    }
+
+    private String handlePutRequest(String path, BufferedReader input) throws IOException {
+        if (path.startsWith("/recordings/")) {
+            try {
+                int id = Integer.parseInt(path.substring(12));
+                return formatHttpResponse(200, updateRecording(id, readRequestBody(input)));
+            } catch (NumberFormatException e) {
+                return formatHttpResponse(400, "Formato de ID inválido");
+            }
+        }
+        return formatHttpResponse(404, "Recurso no encontrado");
+    }
+
+    private String handleDeleteRequest(String path) {
+        if (path.startsWith("/recordings/")) {
+            try {
+                int id = Integer.parseInt(path.substring(12));
+                return destroyRecording(id);
+            } catch (NumberFormatException e) {
+                return formatHttpResponse(400, "Formato de ID inválido");
+            }
+        }
+        return formatHttpResponse(404, "Recurso no encontrado");
     }
 
     public String createRecording(String requestBody) {
-        System.out.println("Recibido JSON: " + requestBody);
-
+        LOGGER.info("Recibido JSON: " + requestBody);
         try {
             Map<String, Object> jsonMap = JsonManager.fromJsonToMap(requestBody);
             int id = ((Double) jsonMap.get("id")).intValue();
@@ -65,16 +86,18 @@ public class RecordingController {
 
             RecordingDto recordingDto = new RecordingDto(id, title, duration);
             recordingRepository.saveRecording(recordingDto);
-            return "HTTP/1.1 201 Created\r\n\r\nRecording created successfully";
+            return formatHttpResponse(201, "Grabación creada exitosamente");
         } catch (Exception e) {
-            e.printStackTrace();
-            return "HTTP/1.1 400 Bad Request\r\n\r\nInvalid JSON format";
+            LOGGER.log(Level.SEVERE, "Error al procesar JSON", e);
+            return formatHttpResponse(400, "Formato JSON inválido");
         }
     }
 
     public String getRecordingById(int id) {
         RecordingDto recording = recordingRepository.getRecordingById(id);
-        return recording != null ? JsonManager.toJson(recording) : "HTTP/1.1 404 Not Found\r\n\r\nRecording not found";
+        return recording != null
+                ? JsonManager.toJson(recording)
+                : formatHttpResponse(404, "Grabación no encontrada");
     }
 
     public String getAllRecordings() {
@@ -85,39 +108,41 @@ public class RecordingController {
     public String updateRecording(int id, String requestBody) {
         try {
             Map<String, Object> jsonMap = JsonManager.fromJsonToMap(requestBody);
-            String title = jsonMap.get("title") != null ? jsonMap.get("title").toString() : "Default Title";
-            double duration = jsonMap.get("duration") != null ? ((Number) jsonMap.get("duration")).doubleValue() : 0.0;
+            String title = (String) jsonMap.getOrDefault("title", "Título por defecto");
+            double duration = ((Number) jsonMap.getOrDefault("duration", 0.0)).doubleValue();
 
             RecordingDto recordingDto = new RecordingDto(id, title, duration);
             boolean updated = recordingRepository.updateRecording(id, recordingDto);
 
-            return updated ? "HTTP/1.1 200 OK\r\n\r\nRecording updated successfully" : "HTTP/1.1 404 Not Found\r\n\r\nRecording not found";
-
+            return updated
+                    ? formatHttpResponse(200, "Grabación actualizada exitosamente")
+                    : formatHttpResponse(404, "Grabación no encontrada");
         } catch (Exception e) {
-            e.printStackTrace();
-            return "HTTP/1.1 400 Bad Request\r\n\r\nInvalid JSON format";
+            LOGGER.log(Level.SEVERE, "Error al actualizar grabación", e);
+            return formatHttpResponse(400, "Formato JSON inválido");
         }
     }
 
-    public void destroyRecording(int id) {
-        recordingRepository.destroyRecording(id);
+    public String destroyRecording(int id) {
+        boolean deleted = recordingRepository.destroyRecording(id);
+        return deleted
+                ? formatHttpResponse(200, "Grabación eliminada correctamente")
+                : formatHttpResponse(404, "Grabación no encontrada");
     }
 
     private String readRequestBody(BufferedReader input) throws IOException {
         StringBuilder requestBody = new StringBuilder();
         String line;
-
         while ((line = input.readLine()) != null && !line.isEmpty()) {
-            System.out.println("Header: " + line);
+            LOGGER.info("Header: " + line);
         }
-
         while (input.ready()) {
             requestBody.append((char) input.read());
         }
+        return requestBody.toString().trim();
+    }
 
-        String json = requestBody.toString().trim();
-        System.out.println("Cuerpo de la petición recibido: " + json);
-
-        return json;
+    private String formatHttpResponse(int statusCode, String message) {
+        return "HTTP/1.1 " + statusCode + " \r\n\r\n" + message;
     }
 }
