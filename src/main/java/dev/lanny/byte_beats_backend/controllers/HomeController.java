@@ -1,14 +1,13 @@
 package dev.lanny.byte_beats_backend.controllers;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class HomeController {
+    private static final Logger LOGGER = Logger.getLogger(HomeController.class.getName());
     private final ServerSocket serverSocket;
     private final RecordingController recordingController;
     private boolean running = true;
@@ -19,22 +18,23 @@ public class HomeController {
     }
 
     public void run() {
-        System.out.println("Servidor iniciando en el puerto " + serverSocket.getLocalPort());
+        LOGGER.info("Servidor iniciado en el puerto " + serverSocket.getLocalPort());
 
         while (running) {
             try {
                 if (serverSocket.isClosed()) {
-                    System.out.println("El servidor ha sido cerrado. Saliendo del bucle.");
+                    LOGGER.warning("El servidor ha sido cerrado. Saliendo del bucle.");
                     break;
                 }
 
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("Cliente conectado: " + clientSocket.getInetAddress());
+                LOGGER.info("Cliente conectado: " + clientSocket.getInetAddress());
+
                 new Thread(() -> handleClientCommunication(clientSocket)).start();
 
             } catch (IOException e) {
                 if (running) {
-                    System.err.println("Error al aceptar la conexión del cliente: " + e.getMessage());
+                    LOGGER.log(Level.SEVERE, "Error al aceptar conexión del cliente", e);
                 }
             }
         }
@@ -43,27 +43,36 @@ public class HomeController {
 
     private void handleClientCommunication(Socket clientSocket) {
         try (BufferedReader input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                BufferedWriter output = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()))) {
+            BufferedWriter output = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()))) {
 
-            String requestInfo = input.readLine();
-            if (requestInfo == null) {
+            String requestLine = input.readLine();
+            if (requestLine == null) {
                 return;
             }
 
-            System.out.println("Petición recibida: " + requestInfo);
+            LOGGER.info("Petición recibida: " + requestLine);
 
-            String response = recordingController.processRecordingRequest(requestInfo.split(" ")[0],
-                    requestInfo.split(" ")[1], input);
+            String[] requestParts = requestLine.split(" ");
+            if (requestParts.length < 2) {
+                output.write("HTTP/1.1 400 Bad Request\r\n\r\nInvalid request format");
+                output.flush();
+                return;
+            }
+
+            String method = requestParts[0];
+            String path = requestParts[1];
+
+            String response = recordingController.processRecordingRequest(method, path, input);
             output.write("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n" + response);
             output.flush();
 
         } catch (IOException e) {
-            System.err.println("Error al manejar el cliente: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Error al manejar la comunicación con el cliente", e);
         } finally {
             try {
                 clientSocket.close();
             } catch (IOException e) {
-                System.err.println("Error al cerrar el socket del cliente: " + e.getMessage());
+                LOGGER.log(Level.WARNING, "Error al cerrar el socket del cliente", e);
             }
         }
     }
@@ -73,10 +82,10 @@ public class HomeController {
         try {
             if (!serverSocket.isClosed()) {
                 serverSocket.close();
-                System.out.println("Servidor cerrado correctamente.");
+                LOGGER.info("Servidor cerrado correctamente.");
             }
         } catch (IOException e) {
-            System.err.println("Error al cerrar el servidor: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Error al cerrar el servidor", e);
         }
     }
 }
