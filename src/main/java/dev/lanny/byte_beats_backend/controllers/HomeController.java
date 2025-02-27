@@ -42,10 +42,10 @@ public class HomeController {
     }
 
     private void handleClientCommunication(Socket clientSocket) {
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()))) {
+        try (BufferedReader input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                BufferedWriter output = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()))) {
 
-            String requestInfo = in.readLine();
+            String requestInfo = input.readLine();
             if (requestInfo == null) {
                 return;
             }
@@ -53,9 +53,9 @@ public class HomeController {
             System.out.println("Petición recibida: " + requestInfo);
 
             String response = recordingController.processRecordingRequest(requestInfo.split(" ")[0],
-                    requestInfo.split(" ")[1], in);
-            out.write("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n" + response);
-            out.flush();
+                    requestInfo.split(" ")[1], input);
+            output.write("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n" + response);
+            output.flush();
 
         } catch (IOException e) {
             System.err.println("Error al manejar el cliente: " + e.getMessage());
