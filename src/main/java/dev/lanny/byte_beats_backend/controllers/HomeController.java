@@ -20,26 +20,33 @@ public class HomeController {
 
     public void run() {
         System.out.println("Servidor iniciando en el puerto " + serverSocket.getLocalPort());
-
+    
         while (running) {
             try {
                 if (serverSocket.isClosed()) {
-                    System.out.println("El servidor ha sido cerrado. Saliendo del bucle.");
+                    System.out.println("Servidor cerrado manualmente. Saliendo del bucle.");
                     break;
                 }
-
+    
+                System.out.println("Esperando conexiones...");
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("Cliente conectado: " + clientSocket.getInetAddress());
+                System.out.println("Cliente conectado desde: " + clientSocket.getInetAddress());
+    
                 new Thread(() -> handleClientCommunication(clientSocket)).start();
-
+    
             } catch (IOException e) {
-                if (running) {
+                if (running) {  
                     System.err.println("Error al aceptar la conexión del cliente: " + e.getMessage());
                 }
+                break; 
             }
         }
+    
+        System.out.println("Servidor detenido.");
         stop();
     }
+    
+    
 
     private void handleClientCommunication(Socket clientSocket) {
         try (BufferedReader input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
@@ -71,12 +78,14 @@ public class HomeController {
     public void stop() {
         running = false;
         try {
-            if (!serverSocket.isClosed()) {
+            if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
                 System.out.println("Servidor cerrado correctamente.");
             }
         } catch (IOException e) {
-            System.err.println("Error al cerrar el servidor: " + e.getMessage());
+            System.err.println("⚠️ Error al cerrar el servidor: " + e.getMessage());
         }
     }
+    
+    
 }

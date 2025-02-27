@@ -7,7 +7,7 @@ import java.util.Properties;
 public class ConfigLoader {
     private static Properties properties = new Properties();
     static {
-        try (InputStream input = ConfigLoader.class.getClassLoader().getResourceAsStream("config/config.properties")) {
+        try (InputStream input = ConfigLoader.class.getClassLoader().getResourceAsStream("config.properties")) {
             if (input == null) {
                 throw new RuntimeException("El archivo config.properties no fue encontrado en el classpath.");
             }
