@@ -74,7 +74,5 @@ public class RecordingRepository {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-    }
-
-    
+    }    
 }
