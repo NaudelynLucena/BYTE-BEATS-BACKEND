@@ -19,7 +19,7 @@ public class RecordingController {
 
     }
 
-    public String processRecordingRequest(String method, String path, BufferedReader input){
+    public String processRecordingRequest(String method, String path, BufferedReader input)throws IOException {
         if ("GET".equalsIgnoreCase(method) && path.equals("/recordings")) {
             return getAllRecordings();
         }
@@ -103,16 +103,16 @@ public class RecordingController {
         recordingRepository.destroyRecording(id);
     }
 
-    private String readRequestBody(BufferedReader in) throws IOException {
+    private String readRequestBody(BufferedReader input) throws IOException {
         StringBuilder requestBody = new StringBuilder();
         String line;
 
-        while ((line = in.readLine()) != null && !line.isEmpty()) {
+        while ((line = input.readLine()) != null && !line.isEmpty()) {
             System.out.println("Header: " + line);
         }
 
-        while (in.ready()) {
-            requestBody.append((char) in.read());
+        while (input.ready()) {
+            requestBody.append((char) input.read());
         }
 
         String json = requestBody.toString().trim();
