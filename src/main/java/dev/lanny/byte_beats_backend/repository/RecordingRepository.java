@@ -63,30 +63,3 @@ public class RecordingRepository {
         }
         return null;
     }
-
-    public boolean updateRecording(int id, RecordingDto recordingDto) {
-        String query = "UPDATE recordings SET title = ?, duration = ? WHERE id = ?";
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setString(1, recordingDto.title());
-            stmt.setDouble(2, recordingDto.duration());
-            stmt.setInt(3, id);
-            int affectedRows = stmt.executeUpdate();
-            return affectedRows > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    public boolean destroyRecording(int id) {
-        String query = "DELETE FROM recordings WHERE id = ?";
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setInt(1, id);
-            int affectedRows = stmt.executeUpdate();
-            return affectedRows > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-}
