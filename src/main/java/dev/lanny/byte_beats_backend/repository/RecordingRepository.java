@@ -63,6 +63,17 @@ public class RecordingRepository {
         }
         return null;
     }
+    public void saveRecording(RecordingDto recordingDto) {
+        String query = "INSERT INTO recordings (id, title, duration) VALUES (?, ?, ?)";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setInt(1, recordingDto.id());
+            stmt.setString(2, recordingDto.title());
+            stmt.setDouble(3, recordingDto.duration());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     public boolean updateRecording(int id, RecordingDto recordingDto) {
         String query = "UPDATE recordings SET title = ?, duration = ? WHERE id = ?";
