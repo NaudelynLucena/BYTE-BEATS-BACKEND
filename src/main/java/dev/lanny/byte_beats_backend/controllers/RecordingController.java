@@ -4,11 +4,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 import dev.lanny.byte_beats_backend.dtos.NoteDto;
 import dev.lanny.byte_beats_backend.dtos.RecordingDto;
 import dev.lanny.byte_beats_backend.repository.RecordingRepository;
 import utils.JsonManager;
+
 
 public class RecordingController {
 
@@ -16,7 +18,6 @@ public class RecordingController {
 
     public RecordingController() {
         this.recordingRepository = new RecordingRepository();
-
     }
 
     public String processRecordingRequest(String method, String path, BufferedReader input) throws IOException {
@@ -28,73 +29,71 @@ public class RecordingController {
                 int id = Integer.parseInt(path.substring(12));
                 return getRecordingById(id);
             } catch (NumberFormatException e) {
-                return "HTTP/1.1 400 Bad Request\r\n\r\nInvalid ID format";
+                return "HTTP/1.1 400 Bad Request\r\n\r\nID inválido";
             }
         }
         if ("POST".equalsIgnoreCase(method) && path.equals("/recordings")) {
-            return createRecording(readRequestBody(input));
+            createRecording(readRequestBody(input));
+            return "HTTP/1.1 201 Created\r\n\r\nGrabación creada"; 
         }
         if ("PUT".equalsIgnoreCase(method) && path.startsWith("/recordings/")) {
             try {
                 int recordingId = Integer.parseInt(path.substring(12));
                 return updateRecording(recordingId, readRequestBody(input));
             } catch (NumberFormatException e) {
-                return "HTTP/1.1 400 Bad Request\r\n\r\nInvalid ID format (must be a number)";
+                return "HTTP/1.1 400 Bad Request\r\n\r\nID inválido";
             }
         }
-
         if ("DELETE".equalsIgnoreCase(method) && path.startsWith("/recordings/")) {
             try {
                 int id = Integer.parseInt(path.substring(12));
                 return destroyRecording(id);
             } catch (NumberFormatException e) {
-                return "HTTP/1.1 400 Bad Request\r\n\r\nInvalid ID format";
+                return "HTTP/1.1 400 Bad Request\r\n\r\nID inválido";
             }
         }
         return "HTTP/1.1 404 Not Found\r\n\r\n";
     }
 
-    public String createRecording(String requestBody) {
-        System.out.println("Recibido JSON: " + requestBody);
-
+    public void createRecording(String requestBody) {
         try {
             Map<String, Object> jsonMap = JsonManager.fromJsonToMap(requestBody);
             String timestamp = (String) jsonMap.get("timestamp");
             long duration = ((Number) jsonMap.get("duration")).longValue();
-            String instrument = (String) jsonMap.get("instrument");
-
+            String instrument = (String) jsonMap.get("instrument");    
+            
             Object notesObj = jsonMap.get("notes");
             if (!(notesObj instanceof List<?>)) {
-                return "HTTP/1.1 400 Bad Request\r\n\r\nInvalid notes format";
+                System.out.println("Error: Formato incorrecto de notas");
+                return;
             }
-            List<Map<String, Object>> notesList = ((List<?>) notesObj).stream()
-                    .filter(item -> item instanceof Map<?, ?>)
-                    .map(item -> {
-                        if (item instanceof Map<?, ?> map) {
-                            return (Map<String, Object>) map;
-                        } else {
-                            throw new IllegalArgumentException("Invalid notes format");
-                        }
-                    })
-                    .toList();
-            List<NoteDto> notes = notesList.stream().map(note -> new NoteDto(
-                    ((Number) note.get("midi")).intValue(),
-                    ((Number) note.get("startTime")).longValue(),
-                    ((Number) note.get("stopTime")).longValue(),
-                    ((Number) note.get("duration")).longValue())).toList();
-
+    
+            List<NoteDto> notes = new ArrayList<>();
+            for (Object item : (List<?>) notesObj) {
+                if (item instanceof Map<?, ?> map) {
+                    int midi = ((Number) map.get("midi")).intValue();
+                    long startTime = ((Number) map.get("startTime")).longValue();
+                    long stopTime = ((Number) map.get("stopTime")).longValue();
+                    long noteDuration = ((Number) map.get("duration")).longValue();
+    
+                    notes.add(new NoteDto(midi, startTime, stopTime, noteDuration));
+                }
+            }
+                
             RecordingDto recordingDto = new RecordingDto(0, timestamp, duration, instrument, notes);
             recordingRepository.saveRecording(recordingDto);
-            return "HTTP/1.1 201 Created\r\n\r\nRecording created successfully";
+    
+            System.out.println("Grabación creada correctamente.");
+            
         } catch (Exception e) {
-            e.printStackTrace();
-            return "HTTP/1.1 400 Bad Request\r\n\r\nInvalid JSON format";
+            System.out.println("Error al procesar la grabación: " + e.getMessage());
         }
     }
-
+    
     public String getRecordingById(int recordingId) {
         RecordingDto recording = recordingRepository.getRecordingById(recordingId);
-        return recording != null ? JsonManager.toJson(recording) : "HTTP/1.1 404 Not Found\r\n\r\nRecording not found";
+        return recording != null ? JsonManager.toJson(recording)
+                : "HTTP/1.1 404 Not Found\r\n\r\nGrabación no encontrada";
     }
 
     public String getAllRecordings() {
@@ -109,37 +108,19 @@ public class RecordingController {
             long duration = ((Number) jsonMap.get("duration")).longValue();
             String instrument = (String) jsonMap.get("instrument");
 
-            Object notesObj = jsonMap.get("notes");
-            if (!(notesObj instanceof List<?>)) {
-                return "HTTP/1.1 400 Bad Request\r\n\r\nInvalid notes format";
-            }
-            List<?> notesRawList = (List<?>) notesObj;
-            List<Map<String, Object>> notesList = notesRawList.stream()
-                    .filter(item -> item instanceof Map<?, ?>)
-                    .map(item -> (Map<String, Object>) item)
-                    .toList();
-            List<NoteDto> notes = notesList.stream().map(note -> new NoteDto(
-                    ((Number) note.get("midi")).intValue(),
-                    ((Number) note.get("startTime")).longValue(),
-                    ((Number) note.get("stopTime")).longValue(),
-                    ((Number) note.get("duration")).longValue())).toList();
-
-            RecordingDto recordingDto = new RecordingDto(recordingId, timestamp, duration, instrument, notes);
+            RecordingDto recordingDto = new RecordingDto(recordingId, timestamp, duration, instrument, List.of());
             boolean updated = recordingRepository.updateRecording(recordingId, recordingDto);
 
-            return updated ? "HTTP/1.1 200 OK\r\n\r\nRecording updated successfully"
-                    : "HTTP/1.1 404 Not Found\r\n\r\nRecording not found";
-
+            return updated ? "HTTP/1.1 200 OK\r\n\r\nGrabación actualizada"
+                    : "HTTP/1.1 404 Not Found\r\n\r\nNo encontrada";
         } catch (Exception e) {
-            e.printStackTrace();
-            return "HTTP/1.1 400 Bad Request\r\n\r\nInvalid JSON format";
+            return "HTTP/1.1 400 Bad Request\r\n\r\nFormato JSON inválido";
         }
     }
 
     public String destroyRecording(int recordingId) {
         boolean deleted = recordingRepository.destroyRecording(recordingId);
-        return deleted ? "HTTP/1.1 200 OK\r\n\r\nRecording deleted successfully"
-                : "HTTP/1.1 404 Not Found\r\n\r\nRecording not found";
+        return deleted ? "HTTP/1.1 200 OK\r\n\r\nGrabación eliminada" : "HTTP/1.1 404 Not Found\r\n\r\nNo encontrada";
     }
 
     private String readRequestBody(BufferedReader input) throws IOException {
@@ -149,14 +130,12 @@ public class RecordingController {
         while ((line = input.readLine()) != null && !line.isEmpty()) {
             System.out.println("Header: " + line);
         }
-
         while (input.ready()) {
             requestBody.append((char) input.read());
         }
 
-        String json = requestBody.toString().trim();
-        System.out.println("Cuerpo de la petición recibido: " + json);
-
-        return json;
+        return requestBody.toString().trim();
     }
+
 }
+
