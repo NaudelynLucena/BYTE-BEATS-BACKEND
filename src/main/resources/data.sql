@@ -1,11 +1,29 @@
-
 CREATE TABLE IF NOT EXISTS recordings (
-    id INT PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    duration DOUBLE NOT NULL
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    timestamp VARCHAR(255) NOT NULL,
+    duration BIGINT NOT NULL,
+    instrument VARCHAR(255) NOT NULL
 );
 
-INSERT INTO recordings (id, title, duration) VALUES
-(1, 'Mi Primera Grabación', 120.5),
-(2, 'Segunda Grabación', 90.0),
-(3, 'Tercera Grabación', 60.0);
+CREATE TABLE IF NOT EXISTS notes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    midi INT NOT NULL,
+    startTime BIGINT NOT NULL,
+    stopTime BIGINT NOT NULL,
+    duration BIGINT NOT NULL,
+    recordingId INT, 
+    FOREIGN KEY (recordingId) REFERENCES recordings(id) ON DELETE CASCADE
+);
+
+
+INSERT INTO recordings (timestamp, duration, instrument) VALUES
+('2025-02-26T14:30:00.000Z', 30000, 'piano'),
+('2025-02-26T15:00:00.000Z', 45000, 'guitar'),
+('2025-02-26T16:15:00.000Z', 60000, 'violin');
+
+
+INSERT INTO notes (midi, startTime, stopTime, duration, recordingId) VALUES
+(60, 1656379200000, 1656379200500, 500, 1), 
+(64, 1656379200700, 1656379201200, 500, 1),
+(65, 1656380000000, 1656380000500, 500, 2),
+(67, 1656381000000, 1656381000500, 500, 3);
