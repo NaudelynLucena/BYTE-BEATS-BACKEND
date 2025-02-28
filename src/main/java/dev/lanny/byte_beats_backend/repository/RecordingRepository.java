@@ -43,19 +43,19 @@ public class RecordingRepository {
         }
         return recording;
     }
+
     public RecordingDto getRecordingById(int id) {
-      
-        String query = "SELECT * FROM recordings WHERE id =? " ;
+
+        String query = "SELECT * FROM recordings WHERE id =? ";
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setInt(1, id);
-            ResultSet rs =stmt.executeQuery();
+            ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return new RecordingDto(
                         rs.getInt("id"),
                         rs.getString("title"),
                         rs.getDouble("duration"));
-                    
-           
+
             }
 
         } catch (SQLException e) {
@@ -63,16 +63,3 @@ public class RecordingRepository {
         }
         return null;
     }
-    // Guardar una nueva grabación
-    public void saveRecording(RecordingDto recordingDto) {
-        String query = "INSERT INTO recordings (id, title, duration) VALUES (?, ?, ?)";
-        try (PreparedStatement stmt = connection.prepareStatement(query)) {
-            stmt.setInt(1, recordingDto.id());
-            stmt.setString(2, recordingDto.title());
-            stmt.setDouble(3, recordingDto.duration());
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }    
-}
