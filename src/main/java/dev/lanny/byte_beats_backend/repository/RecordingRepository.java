@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,8 +28,10 @@ public class RecordingRepository {
     public List<RecordingDto> getAllRecordings() {
         List<RecordingDto> recordings = new ArrayList<>();
         String query = "SELECT * FROM recordings";
-        try (Statement stmt = connection.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
+
+        try (PreparedStatement stmt = connection.prepareStatement(query);
+                ResultSet rs = stmt.executeQuery()) {
+
             while (rs.next()) {
                 recordings.add(new RecordingDto(
                         rs.getInt("id"),
@@ -40,7 +41,7 @@ public class RecordingRepository {
                         getNotesByRecordingId(rs.getInt("id"))));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("Error al obtener grabaciones: " + e.getMessage());
         }
         return recordings;
     }
@@ -66,20 +67,20 @@ public class RecordingRepository {
 
     public void saveRecording(RecordingDto recordingDto) {
         String query = "INSERT INTO recordings (timestamp, duration, instrument) VALUES (?, ?, ?)";
-        try (PreparedStatement stmt = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+        try (PreparedStatement stmt = connection.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, recordingDto.timestamp());
             stmt.setLong(2, recordingDto.duration());
             stmt.setString(3, recordingDto.instrument());
             stmt.executeUpdate();
 
-            // Obtener el ID generado automáticamente
             ResultSet generatedKeys = stmt.getGeneratedKeys();
             if (generatedKeys.next()) {
                 int generatedId = generatedKeys.getInt(1);
                 saveNotesForRecording(generatedId, recordingDto.notes());
             }
+            System.out.println("Grabación guardada correctamente.");
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("Error al guardar grabación: " + e.getMessage());
         }
     }
 
@@ -99,7 +100,6 @@ public class RecordingRepository {
         }
     }
 
- 
     public boolean destroyRecording(int recordingId) {
         String query = "DELETE FROM recordings WHERE id = ?";
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
@@ -124,10 +124,12 @@ public class RecordingRepository {
                 stmt.addBatch();
             }
             stmt.executeBatch();
+            System.out.println("Notas guardadas para la grabación.");
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println("Error al guardar notas: " + e.getMessage());
         }
     }
+
     private List<NoteDto> getNotesByRecordingId(int recordingId) {
         List<NoteDto> notes = new ArrayList<>();
         String query = "SELECT midi, startTime, stopTime, duration FROM notes WHERE recordingId = ?";
@@ -142,9 +144,9 @@ public class RecordingRepository {
                         rs.getLong("duration")));
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.err.println(" Error al obtener notas: " + e.getMessage());
         }
         return notes;
     }
-    
+
 }
