@@ -2,46 +2,35 @@ package dev.lanny.byte_beats_backend.models;
 
 public class Recording {
     private int id;
-    private String title;
-    private double duration;
+    private String instrument;   
+    private long  duration;
 
-    public Recording(int id, String title, double duration) {
-        this.id = id;
-        this.title = title;
+    public Recording(int id, String title, String instrument, long duration) {
+        this.id = id;      
+        this.instrument = instrument;
         this.duration = duration;
     }
 
     public int getId() {
         return id;
+    }  
+
+    public String getInstrument() { 
+        return instrument;
     }
 
-    public String getTitle() {
-        return title;
-    }
-
-    public double getDuration() {
+    public long getDuration() {
         return duration;
-    }
-
-    public void startRecording() {
-        System.out.println("Recording started");
-    }
-
-    public void stopRecording() {
-        System.out.println("Recording stopped");
-    }
-
-    public void playRecording() {
-        System.out.println("Recording playing");
     }
 
     @Override
     public String toString() {
         return "Recording{" +
-                "id=" + id +
-                ", title='" + title + '\'' +
+                "id=" + id +                
+                ", instrument='" + instrument + '\'' +
                 ", duration=" + duration +
                 '}';
     }
-
 }
+
+
