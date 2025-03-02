@@ -1,17 +1,29 @@
 package dev.lanny.byte_beats_backend;
 
-/**
- * Hello world!
- */
+
+import java.net.ServerSocket;
+
+import dev.lanny.byte_beats_backend.controllers.HomeController;
+
 public final class App {
     private App() {
     }
 
-    /**
-     * Says hello to the world.
-     * @param args The arguments of the program.
-     */
+    
     public static void main(String[] args) {
-        System.out.println("Hello World!");
+        try {
+            int port = 8080;
+            ServerSocket serverSocket = new ServerSocket(port);
+            System.out.println("✅ Servidor iniciado en el puerto " + port);
+    
+            HomeController homeController = new HomeController(serverSocket);
+            homeController.run();
+    
+        } catch (Exception e) {
+            System.err.println("🔥 Error crítico en el servidor: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
+    
+
 }
