@@ -34,19 +34,24 @@ backend/
 │── data.json (Opcional)    # Datos de ejemplo en formato JSON
 │── data.sql (Opcional)     # Script SQL para H2 en memoria
 
+```
+---
 
 ## ⚙️ Tecnologías Utilizadas
 
+```bash
 | 🛠️ **Tecnología**        | 📌 **Descripción**                                    
-|-------------------------|--------------------------------------------------------|
+|-------------------------|---------------------------------------------------------|
 | **Java (JDK 17)**       | Lenguaje de programación principal                      |
 | **Sockets (ServerSocket & Socket)** | Comunicación entre el backend y el frontend |
 | **H2 Database (Opcional)** | Base de datos en memoria para almacenar grabaciones  |
-| **JSON (Opcional)**     | Almacenamiento de grabaciones en archivos JSON         |
+| **JSON (Opcional)**     | Almacenamiento de grabaciones en archivos JSON          |
 | **JUnit 5**             | Framework para pruebas unitarias                        |
 | **Hamcrest**            | Librería de aserciones para pruebas                     |
-| **Git/GitHub**          | Control de versiones y trabajo colaborativo            |
+| **Git/GitHub**          | Control de versiones y trabajo colaborativo             |
 
+```
+---
 
 ## 📡 Cómo Ejecutar el Backend
 
@@ -56,24 +61,30 @@ Para obtener una copia del código fuente en tu máquina local, clona el reposit
 ```sh
 git clone https://github.com/usuario/aplicacion-instrumentos.git
 cd aplicacion-instrumentos/backend
+```
+---
 
 ## ⚙️ 2️⃣ Compilar el Proyecto
 Antes de ejecutar el servidor, es necesario compilar los archivos de Java. Ejecuta el siguiente comando en la terminal:
 
 ```sh
 javac -d out src/**/*.java
+```
+---
 
 ## ▶️ 3️⃣ Ejecutar el servidor
 Para iniciar el backend, ejecuta el siguiente comando:
 
 ```sh
 java -cp out dev.lanny.byte_beats_backend.Main
+```
+---
 
 ## 🛠️ 4️⃣ Configuración de Persistencia
 El backend admite H2  almacenamiento:
 
 | 💾 ** Opción**        | 📌 **Descripción**                                    
-|-----------------------|--------------------------------------------------------|
+|-----------------------|--------------------------------------------------------------------|
 | **H2 (en memoria)**   | Almacena datos en una base de datos temporal durante la ejecución. |
 
 
@@ -94,6 +105,8 @@ javac -d out src/**/*.java
 
 # Ejecutar el servidor otra vez
 java -cp out dev.lanny.byte_beats_backend.Main
+```
+---
 
 ## 🚀 6️⃣ Probar la API con cURL o Postman
 Para verificar que el backend responde correctamente, puedes usar cURL o Postman.
@@ -102,7 +115,8 @@ Para verificar que el backend responde correctamente, puedes usar cURL o Postman
 
 ```sh
 curl -X GET http://localhost:8080/recordings
-
+```
+---
 
 ## 🔌 API - Endpoints Disponibles
 
@@ -117,16 +131,19 @@ curl -X GET http://localhost:8080/recordings
 
 ## 🧪 Pruebas y Cobertura
 
-📢 Cobertura de Pruebas:
-✔️ Se han implementado tests para:
+- **✔️ Se han implementado tests para:**
 
-🔍 Obtener grabaciones (GET /recordings)
-📝 Crear grabaciones (POST /recordings)
-🛠️ Actualizar grabaciones (PUT /recordings/{id})
-❌ Manejo de errores (404 Not Found, 400 Bad Request)
-🚀 Pruebas de rendimiento (RecordingControllerTest.java)
+- **🔍 Obtener grabaciones (GET /recordings)**
+- **📝 Crear grabaciones (POST /recordings)**
+- **🛠️ Actualizar grabaciones (PUT /recordings/{id})**
+- **❌ Manejo de errores (404 Not Found, 400 Bad Request)**
+- **🚀 Pruebas de rendimiento (RecordingControllerTest.java)**
+
 
 ![alt text](image.png)
 
 Diagrama UML de clases
+
+![alt text](image-1.png)
+
 
